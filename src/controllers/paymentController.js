@@ -197,4 +197,37 @@ class paymentController {
         errors
     }
   }
+
+  async getPaymentStatus(paymentId, gateway) {
+    try {
+        if (!paymentId && !gateway) {
+            throw new Error('Payment ID or gateway is required');
+        }
+
+        const paymentService = PaymentFactory.getPaymentService(gateway);
+
+        if (typeof paymentService.getPaymentStatus === 'function') {
+            return await paymentService.getPaymentStatus(paymentId);
+        } else {
+            return {
+                success: false,
+                error: {
+                    message: 'Payment status not supported for this gateway',
+                    gateway: gateway
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error getting payment status', error);
+        return {
+            success: false,
+            error: {
+                message: 'Failed to get payment status',
+                type: error.type || 'Server error',
+            }
+        }
+    }
+  }
 }
+
+module.exports = new paymentController();
