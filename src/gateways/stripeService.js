@@ -42,7 +42,7 @@ class StripeService {
                     type: error.type || 'Unknown error',
                     code: error.code || 'Payment failed'
                 }
-            }
+            };
         }
 
     }
