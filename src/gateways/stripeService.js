@@ -18,9 +18,9 @@ class StripeService {
                 description: description || 'Test payment using Stripe',
                 payment_method: source,
                 confirm: true,
+                return_url: 'https://scaredengine.com',
                 automatic_payment_methods: {
                     enabled: true,
-                    allow_redirects: never
                 }
 
             });
