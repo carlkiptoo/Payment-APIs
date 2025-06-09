@@ -88,4 +88,62 @@ class paymentController {
         })
     }
   }
+
+  async handlePaymentIntent(req, res) {
+    try{
+        const { gateway, amount, currency='usd', description} = req.body;
+        if (!gateway || !amount) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    message: 'Missing required fields',
+                    requiredFields: ['gateway', 'amount']
+                }
+            })
+
+        }
+
+        if (amount <= 0) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    message: 'Amount must be greater than 0'
+                }
+            })
+        }
+
+        if (!PaymentFactory.isPaymentTypeSupported(gateway)) {
+            res.status(400).json({
+                success: false,
+                error:{
+                   message: `Unsupported gateway ${gateway}`,
+                   gateway: gateway
+                }
+            })
+        }
+
+        const paymentService = PaymentFactory.getPaymentService(gateway);
+
+        if (typeof paymentService.createPaymentIntent === 'function') {
+            const result = await paymentService.createPaymentIntent(amount, currency, description);
+            const statusCode = result.success ? 200 : 400
+
+            res.status(statusCode).json(result)
+        } else {
+            res.status(400).json({
+                success: false,
+                error: {
+                    message: 'Payment creation intent not supported for this gateway',
+                    gateway: gateway
+                }
+            })
+        }
+    } catch (error) {
+        console.error('Payment intent API error', error)
+        res.status(500).json({
+            message: 'Failed to create payment intent',
+            error: 'server_error'
+        })
+    }
+  }
 }
