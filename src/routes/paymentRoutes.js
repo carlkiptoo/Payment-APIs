@@ -1,5 +1,5 @@
 const express = require('express');
-const paymentController = require('../controllers/paymentController');
+const paymentController = require('../../controllers/paymentController');
 
 const router = express.Router();
 
@@ -49,6 +49,8 @@ router.get('/payment/status/:paymentId', (req, res) =>{
     }
 })
 
-router.processPayment = paymentController.processPayment.bind(paymentController);
+router.processPayment = async (gateway, amount, currency, source, description) =>{
+    return await paymentController.makePayment(gateway, amount, currency, source, description);
+}
 
 module.exports = router;

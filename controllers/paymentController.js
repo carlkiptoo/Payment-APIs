@@ -1,4 +1,3 @@
-const { version } = require("react");
 const PaymentFactory = require("../paymentFactory");
 const { Timestamp } = require("mongodb");
 
