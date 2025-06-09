@@ -1,4 +1,6 @@
+const { version } = require("react");
 const PaymentFactory = require("../paymentFactory");
+const { Timestamp } = require("mongodb");
 
 class paymentController {
   async makePayment(gateway, amount, currency, source, description) {
@@ -143,6 +145,37 @@ class paymentController {
         res.status(500).json({
             message: 'Failed to create payment intent',
             error: 'server_error'
+        })
+    }
+  }
+
+  async handleHealthCheck(req, res) {
+    try {
+        const supportedGateways = PaymentFactory.getSupportedPaymentTypes();
+
+        res.json({
+            status: 'ok',
+            service: 'Payment APIs',
+            supportedGateways: {
+                list: supportedGateways,
+                count: supportedGateways.length
+
+            },
+            version: 1.0,
+            Timestamp: new Timestamp(Date.now()),
+            uptime: process.uptime(),
+            environment: process.env.NODE_ENV,
+
+        })
+    }catch (error) {
+        console.error('Error handling health check', error);
+        res.status(500).json({
+            success: false,
+            error: {
+                message: 'Health check failed',
+                type: error.type || 'Server error',
+                Timestamp: new Timestamp(Date.now())
+            }
         })
     }
   }
