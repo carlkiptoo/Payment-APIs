@@ -179,4 +179,22 @@ class paymentController {
         })
     }
   }
+
+  validatePaymentData(data) {
+    const errors = [];
+
+    if (!data.gateway) errors.push('Gateway is required');
+    if (!data.amount) errors.push('Amount is required');
+    if (!data.currency) errors.push('Currency is required');
+    if (!data.paymentMethod) errors.push('Payment method is required');
+    if (data.amount <= 0 ) errors.push('Amount must be greater than 0');
+    if (!PaymentFactory.isPaymentTypeSupported(data.gateway)) {
+      errors.push(`Gateway ${data.gateway} is not supported`);
+    }
+
+    return {
+        isValid: errors.length === 0,
+        errors
+    }
+  }
 }
