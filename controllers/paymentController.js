@@ -51,209 +51,239 @@ class paymentController {
 
   async handleDirectPayment(req, res) {
     try {
-        const {gateway, amount, currency='usd', paymentMethod, description} = req.body;
+      const {
+        gateway,
+        amount,
+        currency = "usd",
+        paymentMethod,
+        description,
+      } = req.body;
 
-        if (!gateway || !amount || !paymentMethod) {
-            return res.status(400).json({
-                success: false,
-                error: {
-                    message: 'Missing required fields',
-                    requiredFields: ['gateway', 'amount', 'paymentMethod']
-                }
-            })
-        }
+      if (!gateway || !amount || !paymentMethod) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: "Missing required fields",
+            requiredFields: ["gateway", "amount", "paymentMethod"],
+          },
+        });
+      }
 
-        if (amount <= 0) {
-            return res.status(400).json({
-                success: false,
-                error: {
-                    message: 'Amount must be greater than 0'
-                }
-            })
-        }
+      if (amount <= 0) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: "Amount must be greater than 0",
+          },
+        });
+      }
 
-        const result = await this.makePayment(gateway, amount, currency, paymentMethod, description);
+      const result = await this.makePayment(
+        gateway,
+        amount,
+        currency,
+        paymentMethod,
+        description
+      );
 
-        
-
-        return res.status(200).json(result);
-
+      return res.status(200).json(result);
     } catch (error) {
-        console.error('Error handling direct payment', error);
-        res.status(500).json({
-            success: false,
-            error: {
-                message: 'Internal server error',
-                type: error.type || 'Server error',
-            }
-        })
+      console.error("Error handling direct payment", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          message: "Internal server error",
+          type: error.type || "Server error",
+        },
+      });
     }
   }
 
   async handlePaymentIntent(req, res) {
-    try{
-        const { gateway, amount, currency='usd', description, source} = req.body;
-        if (!gateway || !amount) {
-            return res.status(400).json({
-                success: false,
-                error: {
-                    message: 'Missing required fields',
-                    requiredFields: ['gateway', 'amount']
-                }
-            })
+    try {
+      const {
+        gateway,
+        amount,
+        currency = "usd",
+        description,
+        source,
+      } = req.body;
+      if (!gateway || !amount) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: "Missing required fields",
+            requiredFields: ["gateway", "amount"],
+          },
+        });
+      }
 
-        }
+      if (amount <= 0) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: "Amount must be greater than 0",
+          },
+        });
+      }
 
-        if (amount <= 0) {
-            return res.status(400).json({
-                success: false,
-                error: {
-                    message: 'Amount must be greater than 0'
-                }
-            })
-        }
+      if (!PaymentFactory.isPaymentTypeSupported(gateway)) {
+        res.status(400).json({
+          success: false,
+          error: {
+            message: `Unsupported gateway ${gateway}`,
+            gateway: gateway,
+          },
+        });
+      }
 
-        if (!PaymentFactory.isPaymentTypeSupported(gateway)) {
-            res.status(400).json({
-                success: false,
-                error:{
-                   message: `Unsupported gateway ${gateway}`,
-                   gateway: gateway
-                }
-            })
-        }
+      const paymentService = PaymentFactory.getPaymentService(gateway);
 
-        const paymentService = PaymentFactory.getPaymentService(gateway);
+      if (typeof paymentService.charge === "function") {
+        const result = await paymentService.charge(amount, source, currency);
+        const statusCode = result.success ? 200 : 400;
 
-        if (typeof paymentService.charge === 'function') {
-            const result = await paymentService.charge(amount, source, currency);
-            const statusCode = result.success ? 200 : 400
-
-            res.status(statusCode).json(result)
-        } else {
-            res.status(400).json({
-                success: false,
-                error: {
-                    message: 'Payment creation intent not supported for this gateway',
-                    gateway: gateway
-                }
-            })
-        }
+        res.status(statusCode).json(result);
+      } else {
+        res.status(400).json({
+          success: false,
+          error: {
+            message: "Payment creation intent not supported for this gateway",
+            gateway: gateway,
+          },
+        });
+      }
     } catch (error) {
-        console.error('Payment intent API error', error)
-        res.status(500).json({
-            message: 'Failed to create payment intent',
-            error: 'server_error'
-        })
+      console.error("Payment intent API error", error);
+      res.status(500).json({
+        message: "Failed to create payment intent",
+        error: "server_error",
+      });
     }
   }
 
   async handleHealthCheck(req, res) {
     try {
-        const supportedGateways = PaymentFactory.getSupportedPaymentTypes();
+      const supportedGateways = PaymentFactory.getSupportedPaymentTypes();
 
-        res.json({
-            status: 'ok',
-            service: 'Payment APIs',
-            supportedGateways: {
-                list: supportedGateways,
-                count: supportedGateways.length
-
-            },
-            version: 1.0,
-            uptime: process.uptime(),
-            environment: process.env.NODE_ENV,
-
-        })
-    }catch (error) {
-        console.error('Error handling health check', error);
-        res.status(500).json({
-            success: false,
-            error: {
-                message: 'Health check failed',
-                type: error.type || 'Server error'
-            }
-        })
+      res.json({
+        status: "ok",
+        service: "Payment APIs",
+        supportedGateways: {
+          list: supportedGateways,
+          count: supportedGateways.length,
+        },
+        version: 1.0,
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV,
+      });
+    } catch (error) {
+      console.error("Error handling health check", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          message: "Health check failed",
+          type: error.type || "Server error",
+        },
+      });
     }
   }
 
   validatePaymentData(data) {
     const errors = [];
 
-    if (!data.gateway) errors.push('Gateway is required');
-    if (!data.amount) errors.push('Amount is required');
-    if (!data.currency) errors.push('Currency is required');
-    if (!data.paymentMethod) errors.push('Payment method is required');
-    if (data.amount <= 0 ) errors.push('Amount must be greater than 0');
+    if (!data.gateway) errors.push("Gateway is required");
+    if (!data.amount) errors.push("Amount is required");
+    if (!data.currency) errors.push("Currency is required");
+    if (!data.paymentMethod) errors.push("Payment method is required");
+    if (data.amount <= 0) errors.push("Amount must be greater than 0");
     if (!PaymentFactory.isPaymentTypeSupported(data.gateway)) {
       errors.push(`Gateway ${data.gateway} is not supported`);
     }
 
     return {
-        isValid: errors.length === 0,
-        errors
-    }
+      isValid: errors.length === 0,
+      errors,
+    };
   }
 
   async getPaymentStatus(paymentId, gateway) {
     try {
-        if (!paymentId && !gateway) {
-            throw new Error('Payment ID or gateway is required');
-        }
+      if (!paymentId && !gateway) {
+        throw new Error("Payment ID or gateway is required");
+      }
 
-        const paymentService = PaymentFactory.getPaymentService(gateway);
+      const paymentService = PaymentFactory.getPaymentService(gateway);
 
-        if (typeof paymentService.getPaymentStatus === 'function') {
-            return await paymentService.getPaymentStatus(paymentId);
-        } else {
-            return {
-                success: false,
-                error: {
-                    message: 'Payment status not supported for this gateway',
-                    gateway: gateway
-                }
-            }
-        }
-    } catch (error) {
-        console.error('Error getting payment status', error);
+      if (typeof paymentService.getPaymentStatus === "function") {
+        return await paymentService.getPaymentStatus(paymentId);
+      } else {
         return {
-            success: false,
-            error: {
-                message: 'Failed to get payment status',
-                type: error.type || 'Server error',
-            }
-        }
+          success: false,
+          error: {
+            message: "Payment status not supported for this gateway",
+            gateway: gateway,
+          },
+        };
+      }
+    } catch (error) {
+      console.error("Error getting payment status", error);
+      return {
+        success: false,
+        error: {
+          message: "Failed to get payment status",
+          type: error.type || "Server error",
+        },
+      };
     }
   }
 
   async handleStkPush(req, res) {
+    console.log("Received STK Push request");
+
     try {
-        const {amount, phone, description, accountReference= 'Ref001'} =req.body;
+      const {
+        amount,
+        phone,
+        description,
+        accountReference = "Ref001",
+      } = req.body;
 
-        if (!amount || !phone) {
-            return res.status(400).json({
-                success: false,
-                error: {'Missing required fields': ['amount', 'phone']}
-            });
-        };
+      if (!amount || !phone) {
+        return res.status(400).json({
+          success: false,
+          error: { "Missing required fields": ["amount", "phone"] },
+        });
+      }
 
-        const mpesa = PaymentFactory.getPaymentService('mpesa');
-        const result = await mpesa.createStkPush({amount, phoneNumber: phone, description, accountReference});
+      const mpesa = PaymentFactory.getPaymentService("mpesa");
+      const result = await mpesa.createStkPush({
+        amount,
+        phoneNumber: phone,
+        description,
+        accountReference,
+      });
 
-        return res.status(result.success ? 200 : 400).json(result);
+       console.log("STK Push Result:", result);
+
+      if (result.success) {
+        return res.status(200).json(result.data);
+      } else {
+        return res.status(500).json(result.error);
+      }
+
+    //   return res.status(result.success ? 200 : 400).json(result);
     } catch (error) {
-        console.error('Error handling stk push', error);
-        res.status(500).json({
-            success: false,
-            error: {
-                message: 'Internal server error',
-                type: error.type || 'Server error',
-            }
-        })
+      console.error("Error handling stk push", error);
+      res.status(500).json({
+        success: false,
+        error: {
+          message: "Internal server error",
+          type: error.type || "Server error",
+        },
+      });
     }
+  }
 }
-
-}
-
 
 module.exports = new paymentController();

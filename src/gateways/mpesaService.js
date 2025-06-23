@@ -50,7 +50,7 @@ class MpesaPaymentService {
         data: response.data,
       };
     } catch (error) {
-      console.log("Error creating Mpesa stk push", error);
+      console.log("Error creating Mpesa stk push", error?.response?.data || error);
       return {
         success: false,
         error: {

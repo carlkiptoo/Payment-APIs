@@ -2,7 +2,8 @@ require("dotenv").config();
 const paymentRoutes = require("./src/routes/paymentRoutes");
 
 const PaymentFactory = require("./paymentFactory");
-
+const express = require('express');
+const cors = require('cors');
 const app = require("express")();
 const port = process.env.PORT || 3000;
 const bodyParser = require("body-parser");
@@ -11,6 +12,9 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Cors
+
+app.use(express.json()); // <-- Needed to parse req.body
+app.use(cors());
 
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
