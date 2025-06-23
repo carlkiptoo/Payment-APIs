@@ -29,6 +29,7 @@ app.use((req, res, next) => {
 
 //Routes
 app.use("/api", paymentRoutes);
+app.use('/api/mpesa', paymentRoutes);
 
 app.get("/", (req, res) => {
   res.json({

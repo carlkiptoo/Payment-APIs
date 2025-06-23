@@ -74,9 +74,9 @@ class paymentController {
 
         const result = await this.makePayment(gateway, amount, currency, paymentMethod, description);
 
-        const statusCode = result.success ? 200 : 400;
+        
 
-        return res.status(statusCode).json(result);
+        return res.status(200).json(result);
 
     } catch (error) {
         console.error('Error handling direct payment', error);
@@ -92,7 +92,7 @@ class paymentController {
 
   async handlePaymentIntent(req, res) {
     try{
-        const { gateway, amount, currency='usd', description} = req.body;
+        const { gateway, amount, currency='usd', description, source} = req.body;
         if (!gateway || !amount) {
             return res.status(400).json({
                 success: false,
@@ -125,8 +125,8 @@ class paymentController {
 
         const paymentService = PaymentFactory.getPaymentService(gateway);
 
-        if (typeof paymentService.createPaymentIntent === 'function') {
-            const result = await paymentService.createPaymentIntent(amount, currency, description);
+        if (typeof paymentService.charge === 'function') {
+            const result = await paymentService.charge(amount, source, currency);
             const statusCode = result.success ? 200 : 400
 
             res.status(statusCode).json(result)
@@ -161,7 +161,6 @@ class paymentController {
 
             },
             version: 1.0,
-            Timestamp: new Timestamp(Date.now()),
             uptime: process.uptime(),
             environment: process.env.NODE_ENV,
 
@@ -172,8 +171,7 @@ class paymentController {
             success: false,
             error: {
                 message: 'Health check failed',
-                type: error.type || 'Server error',
-                Timestamp: new Timestamp(Date.now())
+                type: error.type || 'Server error'
             }
         })
     }
@@ -227,6 +225,35 @@ class paymentController {
         }
     }
   }
+
+  async handleStkPush(req, res) {
+    try {
+        const {amount, phone, description, accountReference= 'Ref001'} =req.body;
+
+        if (!amount || !phone) {
+            return res.status(400).json({
+                success: false,
+                error: {'Missing required fields': ['amount', 'phone']}
+            });
+        };
+
+        const mpesa = PaymentFactory.getPaymentService('mpesa');
+        const result = await mpesa.createStkPush({amount, phoneNumber: phone, description, accountReference});
+
+        return res.status(result.success ? 200 : 400).json(result);
+    } catch (error) {
+        console.error('Error handling stk push', error);
+        res.status(500).json({
+            success: false,
+            error: {
+                message: 'Internal server error',
+                type: error.type || 'Server error',
+            }
+        })
+    }
 }
+
+}
+
 
 module.exports = new paymentController();

@@ -53,4 +53,6 @@ router.processPayment = async (gateway, amount, currency, source, description) =
     return await paymentController.makePayment(gateway, amount, currency, source, description);
 }
 
+router.post('/stk/push', paymentController.handleStkPush);
+
 module.exports = router;

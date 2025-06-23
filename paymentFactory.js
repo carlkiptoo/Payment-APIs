@@ -1,4 +1,5 @@
 const StripeService = require("./src/gateways/stripeService");
+const MpesaPaymentService = require("./src/gateways/mpesaService");
 
 class PaymentFactory {
   static getPaymentService(paymentType) {
@@ -10,6 +11,8 @@ class PaymentFactory {
     switch (normalizedType) {
       case "stripe":
         return new StripeService();
+      case "mpesa":
+        return new MpesaPaymentService();
 
       default: {
         throw new Error(`Unsupported payment type: ${paymentType}`);
@@ -17,7 +20,7 @@ class PaymentFactory {
     }
   }
   static getSupportedPaymentTypes() {
-    return ["stripe"];
+    return ["stripe", "mpesa"];
   }
   static isPaymentTypeSupported(paymentType) {
     if (!paymentType) return false;
