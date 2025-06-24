@@ -284,6 +284,49 @@ class paymentController {
       });
     }
   }
+
+   handleStkPushCallback = (req, res) => {
+    try {
+
+        console.log("STK Callback body", JSON.stringify(req.body, null ,2));
+        const callbackData = req.body?.Body?.stkCallback;
+
+        if (!callbackData) {
+            console.error("Callback data is malformed", req.body);
+            return res.status(400).json({
+                success: false,
+                error: {
+                    message: "Callback data is malformed",
+                    type: "Malformed callback data",
+                },
+            });
+        }
+
+        console.log('Callback received from safaricom: ', JSON.stringify(callbackData));
+
+        if (callbackData.resultCode === '0') {
+            const metadata = callbackData.CallbackMetadata.Item;
+
+            const amount = metadata.find(item => item.Name === "Amount")?.Value;
+            const phone = metadata.find(item => item.Name === "phoneNumber")?.Value;
+            const transactionDate = metadata.find(item => item.Name === 'TransactionDate')?.Value;
+            const receipt = metadata.find(item => item.Name === 'MpesaReceiptNumber')?.Value;
+
+            console.log('Transaction successful:');
+            console.log({amount, receipt, phone, transactionDate});
+
+
+
+        } else {
+            console.log('Transaction failed');
+
+        }
+        res.status(200).json({message: "Callback received successfully"});
+    } catch (error) {
+        console.error('Error processing callback', error);
+        res.status(500).json({error: "Error processing callback"});
+    }
+   }
 }
 
 module.exports = new paymentController();

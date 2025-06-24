@@ -55,4 +55,6 @@ router.processPayment = async (gateway, amount, currency, source, description) =
 
 router.post('/stk/push', paymentController.handleStkPush);
 
+router.post('/stk/push/callback', paymentController.handleStkPushCallback);
+
 module.exports = router;

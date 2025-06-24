@@ -35,6 +35,7 @@ app.use((req, res, next) => {
 app.use("/api", paymentRoutes);
 app.use('/api/mpesa', paymentRoutes);
 
+
 app.get("/", (req, res) => {
   res.json({
     message: "Payments APIs server",
